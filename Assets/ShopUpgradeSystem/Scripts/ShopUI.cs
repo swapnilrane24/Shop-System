@@ -5,10 +5,11 @@ namespace ShopUpgradeSystem
 {
     public class ShopUI : MonoBehaviour
     {
-        public GameObject[] itemsObj;                       //list to all the 3D models of items
-        public ShopSaveScriptable shopSave;                 //ref to ShopSaveScriptable asset
-        public ShopItemScriptable shopItemList;             //ref to ShopItemScriptable asset
-        public Text unlockBtnText, upgradeBtnText, levelText, itemNameText; //ref to important text components
+        [SerializeField] private int totalCoins = 5000;
+        public GameObject[] carList;                       //list to all the 3D models of items
+        public ShopSaveScriptable shopData;                 //ref to ShopSaveScriptable asset
+        public Text unlockBtnText, upgradeBtnText, levelText, carNameText; //ref to important text components
+        public Text speedText, accelerationText, totalCoinsText;
         public Button unlockBtn, upgradeBtn, nextBtn, previousButton;   //ref to important Buttons
 
         private int currentIndex = 0;                       //index of current item showing in the shop 
@@ -18,8 +19,9 @@ namespace ShopUpgradeSystem
         {
             selectedIndex = PlayerPrefs.GetInt("SelectedItem", 0);  //get the selectedIndex from PlayerPrefs
             currentIndex = selectedIndex;                           //set the currentIndex
-            levelText.text = "Level " + shopSave.shopSaveItems[currentIndex].unlockedLevel; //set levelText
-            itemNameText.text = shopSave.shopSaveItems[currentIndex].itemName; //set item name
+            totalCoinsText.text = "" + totalCoins;
+            SetCarInfo();
+
             unlockBtn.onClick.AddListener(() => UnlockSelectButton());      //add listner to button
             upgradeBtn.onClick.AddListener(() => UpgradeButton());          //add listner to button
             nextBtn.onClick.AddListener(() => NextButton());                //add listner to button
@@ -27,11 +29,20 @@ namespace ShopUpgradeSystem
 
             if (currentIndex == 0) previousButton.interactable = false;     //dont interact previousButton if currentIndex is 0
             //dont interact previousButton if currentIndex is shopItemList.shopItems.Length - 1
-            if (currentIndex == shopItemList.shopItems.Length - 1) nextBtn.interactable = false;
+            if (currentIndex == shopData.shopItems.Length - 1) nextBtn.interactable = false;
 
-            itemsObj[currentIndex].SetActive(true);                         //activate the object at currentIndex
+            carList[currentIndex].SetActive(true);                         //activate the object at currentIndex
             UnlockButtonStatus();                                           
             UpgradeButtonStatus();
+        }
+
+        void SetCarInfo()
+        {
+            carNameText.text = shopData.shopItems[currentIndex].carName;
+            int currentLevel = shopData.shopItems[currentIndex].unlockedLevel;
+            levelText.text = "Level:" + (currentLevel + 1); //level start from zero we add 1
+            speedText.text = "Speed:" + shopData.shopItems[currentIndex].carLevelsData[currentLevel].speed;
+            accelerationText.text = "Acc:" + shopData.shopItems[currentIndex].carLevelsData[currentLevel].acceleration;
         }
 
         /// <summary>
@@ -39,23 +50,24 @@ namespace ShopUpgradeSystem
         /// </summary>
         private void NextButton()
         {
-            if (currentIndex < shopItemList.shopItems.Length - 1)
+            //check if currentIndex is less than the total shope items we have - 1
+            if (currentIndex < shopData.shopItems.Length - 1)
             {
-                itemsObj[currentIndex].SetActive(false);
-                currentIndex++;
-                itemsObj[currentIndex].SetActive(true);
-                itemNameText.text = shopSave.shopSaveItems[currentIndex].itemName;
-                if (currentIndex == shopItemList.shopItems.Length - 1)
+                carList[currentIndex].SetActive(false);                     //deactivate old model
+                currentIndex++;                                             //increase count by 1
+                carList[currentIndex].SetActive(true);                      //activate the new model
+                SetCarInfo();                                               //set car information
+
+                //check if current index is equal to total items - 1
+                if (currentIndex == shopData.shopItems.Length - 1)
                 {
-                    nextBtn.interactable = false;
+                    nextBtn.interactable = false;                           //then set nextBtn interactable false
                 }
 
-                if (!previousButton.interactable)
+                if (!previousButton.interactable)                           //if previousButton is not interactable
                 {
-                    previousButton.interactable = true;
+                    previousButton.interactable = true;                     //then set it interactable
                 }
-
-                levelText.text = "Level " + shopSave.shopSaveItems[currentIndex].unlockedLevel;
 
                 UnlockButtonStatus();
                 UpgradeButtonStatus();
@@ -67,24 +79,22 @@ namespace ShopUpgradeSystem
         /// </summary>
         private void PreviousButton()
         {
-            if (currentIndex > 0)
+            if (currentIndex > 0)                           //we check is currentIndex i more than 0
             {
-                itemsObj[currentIndex].SetActive(false);
-                currentIndex--;
-                itemsObj[currentIndex].SetActive(true);
-                itemNameText.text = shopSave.shopSaveItems[currentIndex].itemName;
-                if (currentIndex == 0)
+                carList[currentIndex].SetActive(false);     //deactivate old model
+                currentIndex--;                             //reduce count by 1
+                carList[currentIndex].SetActive(true);      //activate the new model
+                SetCarInfo();                               //set car information
+
+                if (currentIndex == 0)                      //if currentIndex is 0
                 {
-                    previousButton.interactable = false;
+                    previousButton.interactable = false;    //set previousButton interactable to false
                 }
 
-                if (!nextBtn.interactable)
+                if (!nextBtn.interactable)                  //if nextBtn interactable is false
                 {
-                    nextBtn.interactable = true;
+                    nextBtn.interactable = true;            //set nextBtn interactable to true
                 }
-
-                levelText.text = "Level " + shopSave.shopSaveItems[currentIndex].unlockedLevel;
-
                 UnlockButtonStatus();
                 UpgradeButtonStatus();
             }
@@ -95,58 +105,84 @@ namespace ShopUpgradeSystem
         /// </summary>
         private void UnlockSelectButton()
         {
-            unlockBtnText.text = "Selected";
-            selectedIndex = currentIndex;
-            PlayerPrefs.SetInt("SelectedItem", currentIndex);
-            unlockBtn.interactable = false;
-
-            if (!shopSave.shopSaveItems[currentIndex].isUnlocked)
+            bool yesSelected = false;   //local bool
+            if (shopData.shopItems[currentIndex].isUnlocked)    //if shop item at currentIndex is already unlocked
             {
-                //Reduce Coins
-                shopSave.shopSaveItems[currentIndex].isUnlocked = true;
-                UpgradeButtonStatus();
+                yesSelected = true;                             //set yesSelected to true
             }
+            else if (!shopData.shopItems[currentIndex].isUnlocked)  //if shop item at currentIndex is not unlocked
+            {
+                //check if we have enough coins to unlock it
+                if (totalCoins >= shopData.shopItems[currentIndex].unlockCost)
+                {
+                    //if yes then reduce the cost coins from our total coins
+                    totalCoins -= shopData.shopItems[currentIndex].unlockCost;
+                    totalCoinsText.text = "" + totalCoins;          //set the coins text
+                    yesSelected = true;                             //set yesSelected to true
+                    shopData.shopItems[currentIndex].isUnlocked = true; //mark the shop item unlocked
+                    UpgradeButtonStatus();
+                }
+            }
+
+            if (yesSelected)
+            {
+                unlockBtnText.text = "Selected";                    //set the unlockBtnText text to Selected
+                selectedIndex = currentIndex;                       //set the selectedIndex to currentIndex
+                PlayerPrefs.SetInt("SelectedItem", selectedIndex);  //save the selectedIndex
+                unlockBtn.interactable = false;                     //set unlockBtn interactable to false
+            }
+
         }
 
         /// <summary>
         /// Method called on Upgrade button click
         /// </summary>
-        private void UpgradeButton()
+        private void UpgradeButton()//upgrade button is interactable only if we have any level left to upgrade
         {
-            //Reduce Coins
-
-            shopSave.shopSaveItems[currentIndex].unlockedLevel++;
-
-            if (shopSave.shopSaveItems[currentIndex].unlockedLevel < shopItemList.shopItems[currentIndex].levelUnlockCost.Length)
+            //get the next level index
+            int nextLevelIndex = shopData.shopItems[currentIndex].unlockedLevel + 1;
+            //we check if we have enough coins
+            if (totalCoins >= shopData.shopItems[currentIndex].carLevelsData[nextLevelIndex].unlockCost)
             {
-                upgradeBtnText.text = "Upgrade to Lvl " + (shopSave.shopSaveItems[currentIndex].unlockedLevel + 1);
-            }
-            else
-            {
-                upgradeBtn.interactable = false;
-                upgradeBtnText.text = "Max Lvl Reached";
-            }
+                totalCoins -= shopData.shopItems[currentIndex].carLevelsData[nextLevelIndex].unlockCost;
+                totalCoinsText.text = "" + totalCoins;          //set the coins text
+                //if yes we increate the unlockedLevel by 1
+                shopData.shopItems[currentIndex].unlockedLevel++;
 
-            levelText.text = "Level " + shopSave.shopSaveItems[currentIndex].unlockedLevel;
+                //we check if are not at max level
+                if (shopData.shopItems[currentIndex].unlockedLevel < shopData.shopItems[currentIndex].carLevelsData.Length - 1)
+                {
+                    upgradeBtnText.text = "Upgrade Cost " +
+                        shopData.shopItems[currentIndex].carLevelsData[nextLevelIndex + 1].unlockCost;
+                }
+                else    //we check if we are at max level
+                {
+                    upgradeBtn.interactable = false;            //set upgradeBtn interactable to false
+                    upgradeBtnText.text = "Max Lvl Reached";    //set the btn text
+                }
+
+                SetCarInfo();
+            }
         }
 
         /// <summary>
-        /// Method to set Unlock button interactable and text sttus
+        /// This method is called when we are changing the current item in the shop
+        /// This method set the interactablity and text of unlock btn
         /// </summary>
         private void UnlockButtonStatus()
         {
             //if current item is unlocked
-            if (shopSave.shopSaveItems[currentIndex].isUnlocked)
+            if (shopData.shopItems[currentIndex].isUnlocked)
             {
                 //if selectedIndex is not equal to currentIndex set unlockBtn interactable false else make it true
-                unlockBtn.interactable = selectedIndex != currentIndex;
+                unlockBtn.interactable = selectedIndex != currentIndex ? true : false;
                 //set the text
                 unlockBtnText.text = selectedIndex == currentIndex ? "Selected" : "Select";
             }
-            else if (!shopSave.shopSaveItems[currentIndex].isUnlocked) //if current item is not unlocked
+            else if (!shopData.shopItems[currentIndex].isUnlocked) //if current item is not unlocked
             {
                 unlockBtn.interactable = true;  //set the unlockbtn interactable
-                unlockBtnText.text = shopSave.shopSaveItems[currentIndex].unlockCost + ""; //set the text as cost of item
+                unlockBtnText.text = shopData.shopItems[currentIndex].unlockCost + ""; //set the text as cost of item
             }
         }
 
@@ -156,14 +192,16 @@ namespace ShopUpgradeSystem
         private void UpgradeButtonStatus()
         {
             //if current item is unlocked
-            if (shopSave.shopSaveItems[currentIndex].isUnlocked)
+            if (shopData.shopItems[currentIndex].isUnlocked)
             {
                 //if unlockLevel of current item is less than its max level
-                if (shopSave.shopSaveItems[currentIndex].unlockedLevel < shopItemList.shopItems[currentIndex].levelUnlockCost.Length)
+                if (shopData.shopItems[currentIndex].unlockedLevel < shopData.shopItems[currentIndex].carLevelsData.Length - 1)
                 {
                     upgradeBtn.interactable = true;                     //make upgradeBtn interactable true
-                                                                        //set the next level as value of upgrade button text
-                    upgradeBtnText.text = "Upgrade to Lvl " + (shopSave.shopSaveItems[currentIndex].unlockedLevel + 1);
+                    int nextLevelIndex = shopData.shopItems[currentIndex].unlockedLevel + 1;
+                    //set the next level as value of upgrade button text
+                    upgradeBtnText.text = "Upgrade Cost:" +
+                        shopData.shopItems[currentIndex].carLevelsData[nextLevelIndex].unlockCost;
                 }
                 else   //if unlockLevel of current item is equal to max level
                 {
@@ -171,10 +209,10 @@ namespace ShopUpgradeSystem
                     upgradeBtnText.text = "Max Lvl Reached";
                 }
             }
-            else if (!shopSave.shopSaveItems[currentIndex].isUnlocked)  //if current item is not unlocked
+            else if (!shopData.shopItems[currentIndex].isUnlocked)  //if current item is not unlocked
             {
                 upgradeBtn.interactable = false;                        //make upgradeBtn interactable false
-                upgradeBtnText.text = "Upgrade to Lvl " + (shopSave.shopSaveItems[currentIndex].unlockedLevel + 1);
+                upgradeBtnText.text = "Locked";
             }
         }
     }
