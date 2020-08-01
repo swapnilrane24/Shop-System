@@ -1,5 +1,5 @@
 # ShopSystem
  Simple system for shop and upgrade
 
-# Preview
+## Preview
 ![Shop System](http://i.giphy.com/VbseGJ0Pe3XpZMHx7f.gif)
