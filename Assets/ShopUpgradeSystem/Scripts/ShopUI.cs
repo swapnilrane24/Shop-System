@@ -6,8 +6,10 @@ namespace ShopUpgradeSystem
     public class ShopUI : MonoBehaviour
     {
         [SerializeField] private int totalCoins = 5000;
+        [SerializeField] private SaveLoadData saveLoadData;
+
         public GameObject[] carList;                       //list to all the 3D models of items
-        public ShopSaveScriptable shopData;                 //ref to ShopSaveScriptable asset
+        public ShopData shopData;                 //ref to ShopSaveScriptable asset
         public Text unlockBtnText, upgradeBtnText, levelText, carNameText; //ref to important text components
         public Text speedText, accelerationText, totalCoinsText;
         public Button unlockBtn, upgradeBtn, nextBtn, previousButton;   //ref to important Buttons
@@ -17,6 +19,7 @@ namespace ShopUpgradeSystem
 
         private void Start()
         {
+            saveLoadData.Initialize();                      //Initialize , load or save default data and load data
             selectedIndex = PlayerPrefs.GetInt("SelectedItem", 0);  //get the selectedIndex from PlayerPrefs
             currentIndex = selectedIndex;                           //set the currentIndex
             totalCoinsText.text = "" + totalCoins;

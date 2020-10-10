@@ -2,9 +2,8 @@
 
 namespace ShopUpgradeSystem
 {
-    //Class to save item unlock data
-    [CreateAssetMenu(fileName = "ShopData", menuName = "ShopSystem/ShopData", order = 0)]
-    public class ShopSaveScriptable : ScriptableObject
+    [System.Serializable]
+    public class ShopData
     {
         public ShopItem[] shopItems;
     }
