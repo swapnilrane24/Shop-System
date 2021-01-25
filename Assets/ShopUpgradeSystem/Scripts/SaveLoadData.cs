@@ -7,7 +7,7 @@ namespace ShopUpgradeSystem
     public class SaveLoadData : MonoBehaviour
     {
         [SerializeField] private ShopUI shopUI;
-
+        private bool canSave = false;
         //Method to initialize the SaveLoad Script
         public void Initialize()
         {
@@ -21,13 +21,17 @@ namespace ShopUpgradeSystem
                 SaveData();                                     //save the data 1st
                 PlayerPrefs.SetInt("GameStartFirstTime", 1);    //save the PlayerPrefs
             }
+            canSave = true;
         }
 
         //this is Unity method which is called when game is crashed or in background or quit
         private void OnApplicationPause(bool pause)
         {
 #if !UNITY_EDITOR
-            SaveData();                                 //great for saving the data. Note: In editor doesnt work correctly, but works great in Build
+            if(canSave)
+            {
+                SaveData();
+            }
 #endif
         }
 
